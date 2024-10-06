@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { open } from "@tauri-apps/plugin-dialog";
 
   let name = "";
   let greetMsg = "";
@@ -8,15 +9,30 @@
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     greetMsg = await invoke("greet", { name });
   }
+
+  // when using `"withGlobalTauri": true`, you may use: const { open } = window.__TAURI__.dialog;
+  // Open a dialog
+  async function openDir() {
+    try {
+
+      const file = await open({
+        multiple: false,
+        directory: true,
+      });
+      console.log(file);
+      // Prints file path or URI
+    } catch (e) {
+      console.error(e);
+    }
+  }
 </script>
 
 <div class="container">
-  <h1>Welcome to Tauri!</h1>
+  <h1>Tauri!</h1>
+
+  <button type="button" on:click={openDir}>pen Directory</button>
 
   <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
     <a href="https://tauri.app" target="_blank">
       <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
     </a>
@@ -25,7 +41,7 @@
     </a>
   </div>
 
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
+  <p>Click on the Tauri and SvelteKit logos to learn more.</p>
 
   <form class="row" on:submit|preventDefault={greet}>
     <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
@@ -36,9 +52,6 @@
 </div>
 
 <style>
-  .logo.vite:hover {
-    filter: drop-shadow(0 0 2em #747bff);
-  }
 
   .logo.svelte-kit:hover {
     filter: drop-shadow(0 0 2em #ff3e00);
