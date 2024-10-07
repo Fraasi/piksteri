@@ -9,25 +9,31 @@
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../build"
   },
+
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "piksteri",
-        "width": 800,
-        "height": 600
-
+        "width": 1000,
+        "height": 900
       }
     ],
     "security": {
-      "csp": null,
-      "capabilities": [
-        {
-          "identifier": "my-capability",
-          "description": "My application capability used for all windows",
-          "windows": ["*"],
-          "permissions": ["dialog:default"]
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["$HOME/**", "$APPDATA/db/**", "$RESOURCE/**"],
+          "deny": []
         }
-      ]
+      },
+      "csp": {
+        "default-src": "'self' customprotocol: asset:",
+        "connect-src": "ipc: http://ipc.localhost",
+        "font-src": ["https://fonts.gstatic.com"],
+        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com"
+      }
     }
   },
   "bundle": {
