@@ -9,6 +9,9 @@
     "core:default",
     "shell:allow-open",
     "dialog:default",
-    "fs:default"
+    "fs:default",
+    "fs:read-meta",
+    "fs:allow-log-meta",
+    "fs:allow-resource-meta"
   ]
 }

@@ -15,7 +15,7 @@
     "windows": [
       {
         "title": "piksteri",
-        "width": 1000,
+        "width": 1100,
         "height": 900
       }
     ],
@@ -23,7 +23,7 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["$HOME/**", "$APPDATA/db/**", "$RESOURCE/**"],
+          "allow": ["/**"],
           "deny": []
         }
       },
