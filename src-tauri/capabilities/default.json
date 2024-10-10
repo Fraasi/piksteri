@@ -11,7 +11,7 @@
     "dialog:default",
     "fs:default",
     "fs:read-meta",
-    "fs:allow-log-meta",
-    "fs:allow-resource-meta"
+    "fs:read-dirs",
+    "fs:read-files"
   ]
 }
