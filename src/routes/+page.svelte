@@ -1,14 +1,16 @@
 <script lang="ts">
-  // import { invoke } from "@tauri-apps/api/core"
-  import { open } from "@tauri-apps/plugin-dialog"
-  import { join } from "@tauri-apps/api/path"
-  import { convertFileSrc } from "@tauri-apps/api/core"
-  import { readDir } from "@tauri-apps/plugin-fs"
+  import { invoke } from "@tauri-apps/api/core";
+  import { open } from "@tauri-apps/plugin-dialog";
+  // import { join } from "@tauri-apps/api/path"
+  import { convertFileSrc } from "@tauri-apps/api/core";
 
-  let numOfImages = 0
-  let folder = ""
-  let currentImgUrl = "/d/Pics/2020-12-28_2143.png"
-  let intervalId: number
+  let numOfImages = 0;
+  let selectedFolder = "";
+  let currentImgUrl = "";
+  let intervalId: number;
+  let images: string[] = [];
+  let isRunning = false;
+
 
   const extensions = new Set([
     "bmp",
@@ -28,60 +30,75 @@
     "tif",
     "tiff",
     "webp",
-  ])
+  ]);
 
   function isImage(filePath: string): boolean {
-    return extensions.has(filePath.split(".").at(-1)?.toLowerCase() as string)
+    return extensions.has(filePath.split(".").at(-1)?.toLowerCase() as string);
   }
 
   // when using `"withGlobalTauri": true`, you may use: const { open } = window.__TAURI__.dialog
   // Open a dialog
-  async function openDir() {
+  async function selectFolder() {
     try {
-      folder = (await open({
+      selectedFolder = (await open({
         multiple: false,
         directory: true,
         // recursive: true, // https://github.com/tauri-apps/tauri/issues/4851
-      })) as string
-      // console.log(dir)
-      const files = await readDir(folder)
-      const images: string[] = []
+      })) as string;
 
-      for (let file of files) {
-        if (file.isFile && isImage(file.name)) {
-          const path = await join(folder, file.name)
-          const pathConverted = convertFileSrc(path)
-          images.push(pathConverted)
-        }
+      const files: string[] = await invoke("get_files", { path: selectedFolder });
+      images = files
+        .filter((file) => isImage(file))
+        .map((file) => convertFileSrc(file));
+
+      numOfImages = images.length;
+      if (numOfImages > 0) {
+        clearInterval(intervalId);
+        startSlideShow();
       }
-
-      numOfImages = images.length
-      // start with random image & go in order from there
-      let num = Math.floor(Math.random() * numOfImages)
-      clearInterval(intervalId)
-      intervalId = setInterval(() => {
-        if (num >= numOfImages) num = 0
-        currentImgUrl = images[num]
-        console.log("image url:", currentImgUrl)
-        num++
-      }, 5000)
     } catch (e) {
-      console.error(e)
+      console.error(e);
+    }
+  }
+
+  function startSlideShow() {
+    // start with random image & go in order from there
+    let index = Math.floor(Math.random() * numOfImages);
+    currentImgUrl = images[index];
+    intervalId = setInterval(() => {
+      if (index >= numOfImages) index = 0;
+      currentImgUrl = images[index];
+      // console.log("image url:", currentImgUrl);
+      index++;
+    }, 5000);
+  }
+
+  function toggleSildeShow() {
+    console.log("toggleSildeShow", isRunning);
+    if (isRunning) {
+      isRunning = false;
+      clearInterval(intervalId);
+    } else {
+      isRunning = true;
+      startSlideShow();
     }
   }
 </script>
 
 <div class="container">
-  <button type="button" on:click={openDir}>open Directory</button>
-  {#if folder}
-    <p>Selected folder: {folder} - Number of images: {numOfImages}</p>
+  <button type="button" on:click={selectFolder}>open Directory</button>
+  {#if selectedFolder}
+    <p>Selected folder: {selectedFolder} - Number of images: {numOfImages}</p>
   {/if}
   {#if currentImgUrl}
     <img
+      on:click={toggleSildeShow}
       id="current-img"
       src={currentImgUrl}
       alt="{currentImgUrl} file is not an image"
     />
+  {:else}
+    <p>No folder selected</p>
   {/if}
 </div>
 
