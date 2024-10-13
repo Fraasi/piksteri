@@ -14,9 +14,8 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "piksteri",
-        "width": 1100,
-        "height": 900
+        "visible": false,
+        "title": "piksteri"
       }
     ],
     "security": {
