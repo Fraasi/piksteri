@@ -12,6 +12,7 @@
     "fs:default",
     "fs:read-meta",
     "fs:read-dirs",
-    "fs:read-files"
+    "fs:read-files",
+    "window-state:default"
   ]
 }

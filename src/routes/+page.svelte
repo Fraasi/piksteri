@@ -3,6 +3,8 @@
   import { open } from "@tauri-apps/plugin-dialog";
   // import { join } from "@tauri-apps/api/path"
   import { convertFileSrc } from "@tauri-apps/api/core";
+  import Siema from "siema";
+  import { onMount } from "svelte";
 
   let numOfImages = 0;
   let selectedFolder = "";
@@ -10,7 +12,6 @@
   let intervalId: number;
   let images: string[] = [];
   let isRunning = false;
-
 
   const extensions = new Set([
     "bmp",
@@ -40,66 +41,123 @@
   // Open a dialog
   async function selectFolder() {
     try {
-      selectedFolder = (await open({
-        multiple: false,
-        directory: true,
-        // recursive: true, // https://github.com/tauri-apps/tauri/issues/4851
-      })) as string;
+      // selectedFolder = (await open({
+      //   multiple: false,
+      //   directory: true,
+      //   // recursive: true, // https://github.com/tauri-apps/tauri/issues/4851
+      // })) as string;
 
-      const files: string[] = await invoke("get_files", { path: selectedFolder });
+      const files: string[] = await invoke("get_files", {
+        path: selectedFolder || "/d/Downs",
+      });
       images = files
         .filter((file) => isImage(file))
         .map((file) => convertFileSrc(file));
 
       numOfImages = images.length;
-      if (numOfImages > 0) {
-        clearInterval(intervalId);
-        startSlideShow();
-      }
+      runAfterFolderSelect()
+      // if (numOfImages > 0) {
+      //   clearInterval(intervalId);
+      //   startSlideShow();
+      // }
     } catch (e) {
       console.error(e);
     }
   }
 
-  function startSlideShow() {
-    // start with random image & go in order from there
-    let index = Math.floor(Math.random() * numOfImages);
-    currentImgUrl = images[index];
-    intervalId = setInterval(() => {
-      if (index >= numOfImages) index = 0;
-      currentImgUrl = images[index];
-      // console.log("image url:", currentImgUrl);
-      index++;
-    }, 5000);
-  }
+  // function startSlideShow() {
+  //   // start with random image & go in order from there
+  //   let index = Math.floor(Math.random() * numOfImages);
+  //   currentImgUrl = images[index];
+  //   intervalId = setInterval(() => {
+  //     if (index >= numOfImages) index = 0;
+  //     currentImgUrl = images[index];
+  //     // console.log("image url:", currentImgUrl);
+  //     index++;
+  //   }, 5000);
+  // }
 
-  function toggleSildeShow() {
-    console.log("toggleSildeShow", isRunning);
-    if (isRunning) {
-      isRunning = false;
-      clearInterval(intervalId);
-    } else {
-      isRunning = true;
-      startSlideShow();
-    }
-  }
+  // function toggleSildeShow() {
+  //   console.log("toggleSildeShow", isRunning);
+  //   if (isRunning) {
+  //     isRunning = false;
+  //     clearInterval(intervalId);
+  //   } else {
+  //     isRunning = true;
+  //     startSlideShow();
+  //   }
+  // }
+
+  // siema
+  let slider: Siema;
+  let prev: () => void;
+  let next: () => void;
+  let select = 0;
+
+  let runAfterFolderSelect = () => {
+    slider = new Siema({
+      selector: ".siema",
+      duration: 200,
+      easing: "ease-in-out",
+      perPage: 1,
+      startIndex: 0,
+      draggable: true,
+      multipleDrag: true,
+      threshold: 20,
+      loop: true,
+      rtl: false,
+      onInit: () => {},
+      onChange: () => {},
+    }); //end Siema constructor
+    prev = () => {
+      slider.prev();
+      console.log('prev')
+      if (select > 0) {
+        select--;
+      }
+    };
+    next = () => {
+      slider.next();
+      console.log('next')
+
+      if (select >= 0) {
+        select++;
+      }
+    };
+    console.log('onMount: ', slider)
+    setInterval(() => slider.next(), 1000)
+  }; //end onMount
+
 </script>
 
 <div class="container">
   <button type="button" on:click={selectFolder}>open Directory</button>
+  <button on:click={prev}> prev </button>
+  <button on:click={next}> next </button>
   {#if selectedFolder}
     <p>Selected folder: {selectedFolder} - Number of images: {numOfImages}</p>
   {/if}
-  {#if currentImgUrl}
+  <div class="siema">
+    {#if images.length > 0}
+    <div class="siema__sub">
+      {#each images as image}
+        <div class="siema__slide">
+          <img src={image} alt="{image} file is not an image" />
+        </div>
+      {/each}
+    </div>
+  {/if}
+  </div>
+  <!-- {#if currentImgUrl}
     <img
       on:click={toggleSildeShow}
       id="current-img"
       src={currentImgUrl}
       alt="{currentImgUrl} file is not an image"
-    />
-  {:else}
-    <p>No folder selected</p>
-  {/if}
+    /> -->
+  <!-- {:else}
+    <p>No folder selected</p> -->
+  <!-- {/if} -->
 </div>
 
 <style>
@@ -111,12 +169,6 @@
 
     color: #f6f6f6;
     background-color: #2f2f2f;
-
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-text-size-adjust: 100%;
   }
 
   .container {
@@ -125,32 +177,8 @@
     height: 100vh;
   }
 
-  button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    color: #0f0f0f;
-    background-color: #ffffff;
-    transition: border-color 0.25s;
-    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-    outline: none;
-    cursor: pointer;
-  }
-
-  button:hover {
-    border-color: #396cd8;
-  }
-  button:active {
-    border-color: #396cd8;
-    background-color: #0f0f0f69;
-  }
-
-  img#current-img {
-    /* display: block; */
-    width: 100%;
+  .siema__slide > img{
+    /* width: 100%; */
     height: 100%;
     object-fit: contain;
   }

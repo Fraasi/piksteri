@@ -1,5 +1,6 @@
 use tauri::Manager; // need for devtools?
 use std::fs;
+use tauri_plugin_window_state::StateFlags;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -21,8 +22,14 @@ fn get_metadata(path: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    fn saved_states() -> StateFlags {
+        StateFlags::VISIBLE|StateFlags::POSITION|StateFlags::SIZE
+    }
+
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_window_state::Builder::default()
+            .with_state_flags(saved_states())
+            .build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
